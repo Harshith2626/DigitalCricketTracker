@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:gravity="center_horizontal"
+    android:background="#F5F5F5">
+
+    <TextView
+        android:id="@+id/tvBattingTeamHeader"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Team Name"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="#C62828"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Select Opening Players"
+        android:textSize="16sp"
+        android:textColor="#616161"
+        android:layout_marginBottom="32dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select Striker"
+        android:textSize="15sp"
+        android:textColor="#424242"
+        android:layout_marginBottom="6dp" />
+
+    <Spinner
+        android:id="@+id/spinnerStriker"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:drawable/btn_default"
+        android:layout_marginBottom="24dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select Non-Striker"
+        android:textSize="15sp"
+        android:textColor="#424242"
+        android:layout_marginBottom="6dp" />
+
+    <Spinner
+        android:id="@+id/spinnerNonStriker"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:drawable/btn_default"
+        android:layout_marginBottom="32dp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#BDBDBD"
+        android:layout_marginBottom="32dp" />
+
+    <TextView
+        android:id="@+id/tvBowlingTeamHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select Bowler"
+        android:textSize="15sp"
+        android:textColor="#424242"
+        android:layout_marginBottom="6dp" />
+
+    <Spinner
+        android:id="@+id/spinnerBowler"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:drawable/btn_default"
+        android:layout_marginBottom="40dp" />
+
+    <Button
+        android:id="@+id/btnStartMatch"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="Start Match"
+        android:textSize="16sp"
+        android:textColor="@android:color/white"
+        android:backgroundTint="#C62828" />
+
+</LinearLayout>

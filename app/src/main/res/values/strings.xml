@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Cricket Match Tracker</string>
+    <string name="sample_teams">Team A vs Team B</string>
+    <string name="status_upcoming">UPCOMING</string>
+    <string name="sample_score">0/0 | 0/0</string>
+    <string name="sample_overs">Overs: 20</string>
+</resources>

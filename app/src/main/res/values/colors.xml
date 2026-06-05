@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#1A237E</color>
+    <color name="colorPrimaryDark">#121858</color>
+    <color name="colorAccent">#FFD600</color>
+    <color name="colorLive">#D32F2F</color>
+    <color name="colorUpcoming">#1976D2</color>
+    <color name="colorCompleted">#757575</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="background_light">#F8F9FA</color>
+    <color name="card_bg">#FFFFFF</color>
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+    <color name="cricket_green">#2E7D32</color>
+</resources>
