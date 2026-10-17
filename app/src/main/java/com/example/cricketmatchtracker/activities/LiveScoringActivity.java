@@ -10,6 +10,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.cricketmatchtracker.R;
 import com.example.cricketmatchtracker.models.Match;
+import com.example.cricketmatchtracker.utils.FirebaseUtil;
 import com.example.cricketmatchtracker.utils.LocalDataManager;
 import com.google.firebase.database.*;
 import java.util.ArrayList;
@@ -53,9 +54,13 @@ public class LiveScoringActivity extends AppCompatActivity {
             finish();
             return;
         }
-        matchRef = FirebaseDatabase.getInstance().getReference("matches").child(matchId);
+        matchRef = FirebaseUtil.getDatabase().getReference("matches").child(matchId);
 
         initViews();
+        Match localMatch = LocalDataManager.getMatch(this, matchId);
+        if (localMatch != null) {
+            applyMatchData(localMatch);
+        }
         loadMatchData();
     }
 
@@ -86,47 +91,60 @@ public class LiveScoringActivity extends AppCompatActivity {
         btnUndo.setOnClickListener(v -> undoLastBall());
     }
 
+    private void applyMatchData(Match match) {
+        if (match == null) return;
+        currentMatch = match;
+        teamAName = currentMatch.getTeamA();
+        teamBName = currentMatch.getTeamB();
+        totalOvers = currentMatch.getTotalOvers();
+        currentInnings = currentMatch.getCurrentInnings();
+        battingTeam = currentMatch.getBattingTeam();
+        striker = currentMatch.getStriker();
+        nonStriker = currentMatch.getNonStriker();
+        currentBowler = currentMatch.getCurrentBowler();
+
+        if ("A".equals(battingTeam)) {
+            currentScore = currentMatch.getScoreA();
+            currentWickets = currentMatch.getWicketsA();
+            battingPlayers = currentMatch.getTeamAPlayers() != null ? currentMatch.getTeamAPlayers() : new ArrayList<>();
+            bowlingPlayers = currentMatch.getTeamBPlayers() != null ? currentMatch.getTeamBPlayers() : new ArrayList<>();
+            double o = currentMatch.getOversA();
+            totalBalls = (int)(Math.floor(o)*6 + Math.round((o - Math.floor(o))*10));
+        } else {
+            currentScore = currentMatch.getScoreB();
+            currentWickets = currentMatch.getWicketsB();
+            battingPlayers = currentMatch.getTeamBPlayers() != null ? currentMatch.getTeamBPlayers() : new ArrayList<>();
+            bowlingPlayers = currentMatch.getTeamAPlayers() != null ? currentMatch.getTeamAPlayers() : new ArrayList<>();
+            double o = currentMatch.getOversB();
+            totalBalls = (int)(Math.floor(o)*6 + Math.round((o - Math.floor(o))*10));
+        }
+
+        if (currentInnings == 2) {
+            int s1 = "A".equals(battingTeam) ? currentMatch.getScoreB() : currentMatch.getScoreA();
+            targetScore = s1 + 1;
+        }
+        updateUI();
+    }
+
     private void loadMatchData() {
         matchRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (!snapshot.exists()) return;
-                currentMatch = snapshot.getValue(Match.class);
-                if (currentMatch == null) return;
-                currentMatch.setMatchId(snapshot.getKey());
+                Match match = snapshot.getValue(Match.class);
+                if (match == null) return;
+                match.setMatchId(snapshot.getKey());
 
-                teamAName = currentMatch.getTeamA();
-                teamBName = currentMatch.getTeamB();
-                totalOvers = currentMatch.getTotalOvers();
-                currentInnings = currentMatch.getCurrentInnings();
-                battingTeam = currentMatch.getBattingTeam();
-                striker = currentMatch.getStriker();
-                nonStriker = currentMatch.getNonStriker();
-                currentBowler = currentMatch.getCurrentBowler();
+                LocalDataManager.saveMatch(LiveScoringActivity.this, match);
+
+                List<String> fbOut = (List<String>) snapshot.child("outPlayers").getValue();
+                if (fbOut != null) {
+                    outPlayers.clear();
+                    outPlayers.addAll(fbOut);
+                }
 
                 loadStats(snapshot.child("stats"));
-
-                if ("A".equals(battingTeam)) {
-                    currentScore = currentMatch.getScoreA();
-                    currentWickets = currentMatch.getWicketsA();
-                    battingPlayers = currentMatch.getTeamAPlayers();
-                    bowlingPlayers = currentMatch.getTeamBPlayers();
-                    double o = currentMatch.getOversA();
-                    totalBalls = (int)(Math.floor(o)*6 + Math.round((o - Math.floor(o))*10));
-                } else {
-                    currentScore = currentMatch.getScoreB();
-                    currentWickets = currentMatch.getWicketsB();
-                    battingPlayers = currentMatch.getTeamBPlayers();
-                    bowlingPlayers = currentMatch.getTeamAPlayers();
-                    double o = currentMatch.getOversB();
-                    totalBalls = (int)(Math.floor(o)*6 + Math.round((o - Math.floor(o))*10));
-                }
-
-                if (currentInnings == 2) {
-                    int s1 = "A".equals(battingTeam) ? currentMatch.getScoreB() : currentMatch.getScoreA();
-                    targetScore = s1 + 1;
-                }
-                updateUI();
+                applyMatchData(match);
             }
             @Override public void onCancelled(@NonNull DatabaseError error) {}
         });
@@ -210,8 +228,11 @@ public class LiveScoringActivity extends AppCompatActivity {
         }
         if (striker != null && !striker.isEmpty()) {
             playerBalls.put(striker, playerBalls.getOrDefault(striker, 0) + 1);
-            outPlayers.add(striker);
+            if (!outPlayers.contains(striker)) {
+                outPlayers.add(striker);
+            }
         }
+        matchRef.child("outPlayers").setValue(outPlayers);
         saveToFirebase();
         if (!checkInningsEnd()) selectNextBatsman(totalBalls % 6 == 0);
     }
@@ -236,29 +257,32 @@ public class LiveScoringActivity extends AppCompatActivity {
         }
         currentMatch.setStriker(striker); currentMatch.setNonStriker(nonStriker); currentMatch.setCurrentBowler(currentBowler);
         
-        matchRef.child("scoreA").setValue(currentMatch.getScoreA());
-        matchRef.child("scoreB").setValue(currentMatch.getScoreB());
-        matchRef.child("wicketsA").setValue(currentMatch.getWicketsA());
-        matchRef.child("wicketsB").setValue(currentMatch.getWicketsB());
-        matchRef.child("oversA").setValue(currentMatch.getOversA());
-        matchRef.child("oversB").setValue(currentMatch.getOversB());
-        matchRef.child("striker").setValue(striker);
-        matchRef.child("nonStriker").setValue(nonStriker);
-        matchRef.child("currentBowler").setValue(currentBowler);
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("scoreA", currentMatch.getScoreA());
+        updates.put("scoreB", currentMatch.getScoreB());
+        updates.put("wicketsA", currentMatch.getWicketsA());
+        updates.put("wicketsB", currentMatch.getWicketsB());
+        updates.put("oversA", currentMatch.getOversA());
+        updates.put("oversB", currentMatch.getOversB());
+        updates.put("striker", striker);
+        updates.put("nonStriker", nonStriker);
+        updates.put("currentBowler", currentBowler);
 
         if (striker != null && !striker.isEmpty()) {
-            matchRef.child("stats/batsmen/" + striker + "/runs").setValue(playerRuns.getOrDefault(striker, 0));
-            matchRef.child("stats/batsmen/" + striker + "/balls").setValue(playerBalls.getOrDefault(striker, 0));
+            updates.put("stats/batsmen/" + striker + "/runs", playerRuns.getOrDefault(striker, 0));
+            updates.put("stats/batsmen/" + striker + "/balls", playerBalls.getOrDefault(striker, 0));
         }
         if (nonStriker != null && !nonStriker.isEmpty()) {
-            matchRef.child("stats/batsmen/" + nonStriker + "/runs").setValue(playerRuns.getOrDefault(nonStriker, 0));
-            matchRef.child("stats/batsmen/" + nonStriker + "/balls").setValue(playerBalls.getOrDefault(nonStriker, 0));
+            updates.put("stats/batsmen/" + nonStriker + "/runs", playerRuns.getOrDefault(nonStriker, 0));
+            updates.put("stats/batsmen/" + nonStriker + "/balls", playerBalls.getOrDefault(nonStriker, 0));
         }
         if (currentBowler != null && !currentBowler.isEmpty()) {
-            matchRef.child("stats/bowlers/" + currentBowler + "/runs").setValue(bowlerRuns.getOrDefault(currentBowler, 0));
-            matchRef.child("stats/bowlers/" + currentBowler + "/wickets").setValue(bowlerWickets.getOrDefault(currentBowler, 0));
-            matchRef.child("stats/bowlers/" + currentBowler + "/balls").setValue(bowlerBalls.getOrDefault(currentBowler, 0));
+            updates.put("stats/bowlers/" + currentBowler + "/runs", bowlerRuns.getOrDefault(currentBowler, 0));
+            updates.put("stats/bowlers/" + currentBowler + "/wickets", bowlerWickets.getOrDefault(currentBowler, 0));
+            updates.put("stats/bowlers/" + currentBowler + "/balls", bowlerBalls.getOrDefault(currentBowler, 0));
         }
+
+        matchRef.updateChildren(updates);
         LocalDataManager.saveMatch(this, currentMatch);
     }
 
@@ -296,7 +320,25 @@ public class LiveScoringActivity extends AppCompatActivity {
         battingTeam = battingTeam.equals("A") ? "B" : "A";
         matchRef.child("currentInnings").setValue(2);
         matchRef.child("battingTeam").setValue(battingTeam);
-        startActivity(new Intent(this, OpeningPlayersActivity.class).putExtra("matchId", matchId));
+        matchRef.child("striker").setValue("");
+        matchRef.child("nonStriker").setValue("");
+        matchRef.child("currentBowler").setValue("");
+        outPlayers.clear();
+        matchRef.child("outPlayers").setValue(outPlayers);
+
+        if (currentMatch != null) {
+            currentMatch.setCurrentInnings(2);
+            currentMatch.setBattingTeam(battingTeam);
+            currentMatch.setStriker("");
+            currentMatch.setNonStriker("");
+            currentMatch.setCurrentBowler("");
+            LocalDataManager.saveMatch(this, currentMatch);
+        }
+
+        Intent intent = new Intent(this, OpeningPlayersActivity.class);
+        intent.putExtra("matchId", matchId);
+        intent.putExtra("battingTeam", battingTeam);
+        startActivity(intent);
         finish();
     }
 
@@ -334,6 +376,11 @@ public class LiveScoringActivity extends AppCompatActivity {
         new AlertDialog.Builder(this).setTitle("Next Bowler").setItems(p, (d, w) -> {
             currentBowler = p[w]; 
             matchRef.child("currentBowler").setValue(currentBowler);
+            if (currentMatch != null) {
+                currentMatch.setCurrentBowler(currentBowler);
+                LocalDataManager.saveMatch(this, currentMatch);
+            }
+            updateUI();
         }).setCancelable(false).show();
     }
 
@@ -345,6 +392,11 @@ public class LiveScoringActivity extends AppCompatActivity {
         new AlertDialog.Builder(this).setTitle("Next Batsman").setItems(p, (d, w) -> {
             striker = p[w]; 
             matchRef.child("striker").setValue(striker);
+            if (currentMatch != null) {
+                currentMatch.setStriker(striker);
+                LocalDataManager.saveMatch(this, currentMatch);
+            }
+            updateUI();
             if (overEnded) { swapStrike(); selectNextBowler(); }
         }).setCancelable(false).show();
     }

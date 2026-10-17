@@ -1,15 +1,14 @@
 {
-  "NOTE": "REPLACE THIS FILE with your actual google-services.json from Firebase Console",
   "project_info": {
-    "project_number": "YOUR_PROJECT_NUMBER",
-    "firebase_url": "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-    "project_id": "YOUR_PROJECT_ID",
-    "storage_bucket": "YOUR_PROJECT_ID.appspot.com"
+    "project_number": "594973924294",
+    "firebase_url": "https://gully-score-board-default-rtdb.firebaseio.com",
+    "project_id": "gully-score-board",
+    "storage_bucket": "gully-score-board.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:YOUR_PROJECT_NUMBER:android:XXXXXXXXXXXX",
+        "mobilesdk_app_id": "1:594973924294:android:c020b96b57a11b8010f0c7",
         "android_client_info": {
           "package_name": "com.example.cricketmatchtracker"
         }
@@ -17,7 +16,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "YOUR_API_KEY"
+          "current_key": "AIzaSyBGJG5hlItXuRdvlwfMpyGKKebJnpByBl0"
         }
       ],
       "services": {

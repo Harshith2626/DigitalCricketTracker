@@ -5,7 +5,7 @@ import android.os.Bundle;
 import android.widget.Button;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.cricketmatchtracker.R;
-import com.google.firebase.database.FirebaseDatabase;
+import com.example.cricketmatchtracker.utils.FirebaseUtil;
 
 public class HomeActivity extends AppCompatActivity {
 
@@ -17,7 +17,7 @@ public class HomeActivity extends AppCompatActivity {
         
         // Enable Firebase persistence for offline support
         try {
-            FirebaseDatabase.getInstance().setPersistenceEnabled(true);
+            FirebaseUtil.getDatabase().setPersistenceEnabled(true);
         } catch (Exception e) {
             // Already enabled or other initialization issue
         }

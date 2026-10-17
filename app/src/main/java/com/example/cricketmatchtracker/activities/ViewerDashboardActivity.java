@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.cricketmatchtracker.R;
 import com.example.cricketmatchtracker.adapters.MatchAdapter;
 import com.example.cricketmatchtracker.models.Match;
+import com.example.cricketmatchtracker.utils.FirebaseUtil;
 import com.example.cricketmatchtracker.utils.LocalDataManager;
 import com.google.firebase.database.*;
 import java.util.ArrayList;
@@ -94,7 +95,7 @@ public class ViewerDashboardActivity extends AppCompatActivity {
         timeoutHandler.postDelayed(timeoutRunnable, 7000);
 
         try {
-            dbRef = FirebaseDatabase.getInstance().getReference("matches");
+            dbRef = FirebaseUtil.getDatabase().getReference("matches");
             matchListener = new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot snapshot) {

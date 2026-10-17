@@ -11,6 +11,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.cricketmatchtracker.R;
 import com.example.cricketmatchtracker.models.Match;
+import com.example.cricketmatchtracker.utils.FirebaseUtil;
 import com.example.cricketmatchtracker.utils.LocalDataManager;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
@@ -37,7 +38,7 @@ public class CreateMatchActivity extends AppCompatActivity {
         etOvers = findViewById(R.id.etOvers);
         btnCreateMatch = findViewById(R.id.btnCreateMatch);
 
-        dbRef = FirebaseDatabase.getInstance().getReference("matches");
+        dbRef = FirebaseUtil.getDatabase().getReference("matches");
 
         btnCreateMatch.setOnClickListener(new View.OnClickListener() {
             @Override

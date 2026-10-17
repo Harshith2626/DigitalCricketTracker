@@ -90,6 +90,8 @@ public class LocalDataManager {
             obj.put("started", m.isStarted());
             obj.put("completed", m.isCompleted());
             obj.put("winner", m.getWinner());
+            obj.put("tossWinner", m.getTossWinner());
+            obj.put("tossDecision", m.getTossDecision());
             
             if (m.getTeamAPlayers() != null) obj.put("teamAPlayers", new JSONArray(m.getTeamAPlayers()));
             if (m.getTeamBPlayers() != null) obj.put("teamBPlayers", new JSONArray(m.getTeamBPlayers()));
@@ -118,6 +120,8 @@ public class LocalDataManager {
             m.setStarted(obj.optBoolean("started", false));
             m.setCompleted(obj.optBoolean("completed", false));
             m.setWinner(obj.optString("winner", ""));
+            m.setTossWinner(obj.optString("tossWinner", ""));
+            m.setTossDecision(obj.optString("tossDecision", ""));
 
             JSONArray aPlayers = obj.optJSONArray("teamAPlayers");
             if (aPlayers != null) {

@@ -12,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.cricketmatchtracker.R;
 import com.example.cricketmatchtracker.models.Match;
+import com.example.cricketmatchtracker.utils.FirebaseUtil;
 import com.example.cricketmatchtracker.utils.LocalDataManager;
 import com.google.firebase.database.*;
 import java.util.Locale;
@@ -51,7 +52,7 @@ public class ViewerScoreActivity extends AppCompatActivity {
         }
 
         // 2. Start background sync with Firebase
-        matchRef = FirebaseDatabase.getInstance().getReference("matches").child(matchId);
+        matchRef = FirebaseUtil.getDatabase().getReference("matches").child(matchId);
         startListeningForUpdates();
     }
 
@@ -162,31 +163,45 @@ public class ViewerScoreActivity extends AppCompatActivity {
         tvScore.setText(String.format(Locale.getDefault(), "%d/%d", score, wickets));
         tvOvers.setText(String.format(Locale.getDefault(), "Overs: %d.%d / %d", oversDone, ballsDone, match.getTotalOvers()));
 
-        // Detailed player stats (only if statsSnapshot is provided from Firebase)
-        if (statsSnapshot != null) {
-            String sName = match.getStriker();
-            String nsName = match.getNonStriker();
-            String bName = match.getCurrentBowler();
+        String sName = match.getStriker();
+        String nsName = match.getNonStriker();
+        String bName = match.getCurrentBowler();
 
-            if (sName != null && !sName.isEmpty()) {
+        if (sName != null && !sName.isEmpty()) {
+            int r = 0, b = 0;
+            if (statsSnapshot != null) {
                 DataSnapshot d = statsSnapshot.child("batsmen").child(sName);
-                int r = d.child("runs").getValue(Integer.class) != null ? d.child("runs").getValue(Integer.class) : 0;
-                int b = d.child("balls").getValue(Integer.class) != null ? d.child("balls").getValue(Integer.class) : 0;
-                tvStriker.setText(String.format(Locale.getDefault(), "%s: %d(%d)*", sName, r, b));
+                if (d.child("runs").getValue(Integer.class) != null) r = d.child("runs").getValue(Integer.class);
+                if (d.child("balls").getValue(Integer.class) != null) b = d.child("balls").getValue(Integer.class);
             }
-            if (nsName != null && !nsName.isEmpty()) {
+            tvStriker.setText(String.format(Locale.getDefault(), "%s: %d(%d)*", sName, r, b));
+        } else {
+            tvStriker.setText("—");
+        }
+
+        if (nsName != null && !nsName.isEmpty()) {
+            int r = 0, b = 0;
+            if (statsSnapshot != null) {
                 DataSnapshot d = statsSnapshot.child("batsmen").child(nsName);
-                int r = d.child("runs").getValue(Integer.class) != null ? d.child("runs").getValue(Integer.class) : 0;
-                int b = d.child("balls").getValue(Integer.class) != null ? d.child("balls").getValue(Integer.class) : 0;
-                tvNonStriker.setText(String.format(Locale.getDefault(), "%s: %d(%d)", nsName, r, b));
+                if (d.child("runs").getValue(Integer.class) != null) r = d.child("runs").getValue(Integer.class);
+                if (d.child("balls").getValue(Integer.class) != null) b = d.child("balls").getValue(Integer.class);
             }
-            if (bName != null && !bName.isEmpty()) {
+            tvNonStriker.setText(String.format(Locale.getDefault(), "%s: %d(%d)", nsName, r, b));
+        } else {
+            tvNonStriker.setText("—");
+        }
+
+        if (bName != null && !bName.isEmpty()) {
+            int r = 0, w = 0, b = 0;
+            if (statsSnapshot != null) {
                 DataSnapshot d = statsSnapshot.child("bowlers").child(bName);
-                int r = d.child("runs").getValue(Integer.class) != null ? d.child("runs").getValue(Integer.class) : 0;
-                int w = d.child("wickets").getValue(Integer.class) != null ? d.child("wickets").getValue(Integer.class) : 0;
-                int b = d.child("balls").getValue(Integer.class) != null ? d.child("balls").getValue(Integer.class) : 0;
-                tvBowler.setText(String.format(Locale.getDefault(), "Bowler: %s %d-%d (%d.%d)", bName, w, r, b/6, b%6));
+                if (d.child("runs").getValue(Integer.class) != null) r = d.child("runs").getValue(Integer.class);
+                if (d.child("wickets").getValue(Integer.class) != null) w = d.child("wickets").getValue(Integer.class);
+                if (d.child("balls").getValue(Integer.class) != null) b = d.child("balls").getValue(Integer.class);
             }
+            tvBowler.setText(String.format(Locale.getDefault(), "Bowler: %s %d-%d (%d.%d)", bName, w, r, b/6, b%6));
+        } else {
+            tvBowler.setText("Bowler: —");
         }
     }
 

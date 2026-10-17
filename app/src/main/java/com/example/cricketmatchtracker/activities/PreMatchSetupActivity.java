@@ -5,6 +5,9 @@ import android.os.Bundle;
 import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
 import com.example.cricketmatchtracker.R;
+import com.example.cricketmatchtracker.models.Match;
+import com.example.cricketmatchtracker.utils.FirebaseUtil;
+import com.example.cricketmatchtracker.utils.LocalDataManager;
 import com.google.firebase.database.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +28,7 @@ public class PreMatchSetupActivity extends AppCompatActivity {
 
     List<EditText> teamAInputs = new ArrayList<>();
     List<EditText> teamBInputs = new ArrayList<>();
+    private boolean inputsBuilt = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,7 +40,7 @@ public class PreMatchSetupActivity extends AppCompatActivity {
         }
 
         matchId = getIntent().getStringExtra("matchId");
-        matchRef = FirebaseDatabase.getInstance().getReference("matches").child(matchId);
+        matchRef = FirebaseUtil.getDatabase().getReference("matches").child(matchId);
 
         rgTossWinner = findViewById(R.id.rgTossWinner);
         rgTossDecision = findViewById(R.id.rgTossDecision);
@@ -48,19 +52,38 @@ public class PreMatchSetupActivity extends AppCompatActivity {
         llTeamBPlayers = findViewById(R.id.llTeamBPlayers);
         btnSaveAndProceed = findViewById(R.id.btnSaveAndProceed);
 
-        // Load team names from Firebase to set button labels
+        // 1. Load immediately from local storage for offline / instant responsiveness
+        Match localMatch = LocalDataManager.getMatch(this, matchId);
+        if (localMatch != null) {
+            teamAName = localMatch.getTeamA();
+            teamBName = localMatch.getTeamB();
+            if (teamAName != null) rbTeamA.setText(teamAName);
+            if (teamBName != null) rbTeamB.setText(teamBName);
+            if (!inputsBuilt && teamAName != null && teamBName != null) {
+                buildPlayerInputs(llTeamAPlayers, teamAInputs, teamAName);
+                buildPlayerInputs(llTeamBPlayers, teamBInputs, teamBName);
+                inputsBuilt = true;
+            }
+        }
+
+        // 2. Load from Firebase if available
         matchRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
-                teamAName = snapshot.child("teamA").getValue(String.class);
-                teamBName = snapshot.child("teamB").getValue(String.class);
+                String fbTeamA = snapshot.child("teamA").getValue(String.class);
+                String fbTeamB = snapshot.child("teamB").getValue(String.class);
 
-                rbTeamA.setText(teamAName);
-                rbTeamB.setText(teamBName);
+                if (fbTeamA != null) teamAName = fbTeamA;
+                if (fbTeamB != null) teamBName = fbTeamB;
 
-                // Build player input fields dynamically
-                buildPlayerInputs(llTeamAPlayers, teamAInputs, teamAName);
-                buildPlayerInputs(llTeamBPlayers, teamBInputs, teamBName);
+                if (teamAName != null) rbTeamA.setText(teamAName);
+                if (teamBName != null) rbTeamB.setText(teamBName);
+
+                if (!inputsBuilt && teamAName != null && teamBName != null) {
+                    buildPlayerInputs(llTeamAPlayers, teamAInputs, teamAName);
+                    buildPlayerInputs(llTeamBPlayers, teamBInputs, teamBName);
+                    inputsBuilt = true;
+                }
             }
 
             @Override
@@ -115,15 +138,28 @@ public class PreMatchSetupActivity extends AppCompatActivity {
         List<String> teamAPlayers = new ArrayList<>();
         List<String> teamBPlayers = new ArrayList<>();
 
+        int aCount = teamAInputs.size();
         for (int i = 0; i < 11; i++) {
-            String name = teamAInputs.get(i).getText().toString().trim();
+            String name = (i < aCount) ? teamAInputs.get(i).getText().toString().trim() : "";
             if (name.isEmpty()) name = "Player A" + (i + 1);
             teamAPlayers.add(name);
         }
+        int bCount = teamBInputs.size();
         for (int i = 0; i < 11; i++) {
-            String name = teamBInputs.get(i).getText().toString().trim();
+            String name = (i < bCount) ? teamBInputs.get(i).getText().toString().trim() : "";
             if (name.isEmpty()) name = "Player B" + (i + 1);
             teamBPlayers.add(name);
+        }
+
+        // Save locally for offline support
+        Match localMatch = LocalDataManager.getMatch(this, matchId);
+        if (localMatch != null) {
+            localMatch.setTossWinner(tossWinner);
+            localMatch.setTossDecision(tossDecision);
+            localMatch.setBattingTeam(battingTeam);
+            localMatch.setTeamAPlayers(teamAPlayers);
+            localMatch.setTeamBPlayers(teamBPlayers);
+            LocalDataManager.saveMatch(this, localMatch);
         }
 
         // Save to Firebase
